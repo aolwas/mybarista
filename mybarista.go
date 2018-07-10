@@ -7,23 +7,27 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/soumya92/barista"
 	"github.com/soumya92/barista/bar"
 	"github.com/soumya92/barista/colors"
-  "github.com/soumya92/barista/modules/battery"
-  "github.com/soumya92/barista/modules/clock"
+	"github.com/soumya92/barista/modules/battery"
+	"github.com/soumya92/barista/modules/clock"
 	"github.com/soumya92/barista/modules/group"
+	"github.com/soumya92/barista/modules/media"
 	"github.com/soumya92/barista/modules/meminfo"
 	"github.com/soumya92/barista/modules/sysinfo"
+	"github.com/soumya92/barista/modules/weather"
+	"github.com/soumya92/barista/modules/weather/openweathermap"
 	"github.com/soumya92/barista/outputs"
 	"github.com/soumya92/barista/pango"
 	"github.com/soumya92/barista/pango/icons/fontawesome"
 	"github.com/soumya92/barista/pango/icons/ionicons"
 	"github.com/soumya92/barista/pango/icons/material"
-	"github.com/soumya92/barista/pango/icons/material_community"
+	"github.com/soumya92/barista/pango/icons/mdi"
 	"github.com/soumya92/barista/pango/icons/typicons"
 )
 
-var spacer = pango.Span(" ", pango.XXSmall)
+var spacer = pango.Text(" ").XXSmall()
 
 func truncate(in string, l int) string {
 	if len([]rune(in)) <= l {
@@ -47,9 +51,29 @@ func formatMediaTime(d time.Duration) string {
 	return fmt.Sprintf("%d:%02d", m, s)
 }
 
+func mediaFormatFunc(m media.Info) bar.Output {
+	if m.PlaybackStatus == media.Stopped || m.PlaybackStatus == media.Disconnected {
+		return nil
+	}
+	artist := truncate(m.Artist, 20)
+	title := truncate(m.Title, 40-len(artist))
+	if len(title) < 20 {
+		artist = truncate(m.Artist, 40-len(title))
+	}
+	iconAndPosition := pango.Icon("fa-music").Color(colors.Hex("#f70"))
+	if m.PlaybackStatus == media.Playing {
+		iconAndPosition.Append(
+			spacer, pango.Textf("%s/%s",
+				formatMediaTime(m.Position()),
+				formatMediaTime(m.Length)),
+		)
+	}
+	return outputs.Pango(iconAndPosition, spacer, title, " - ", artist)
+}
+
 func startTaskManager(e bar.Event) {
 	if e.Button == bar.ButtonLeft {
-		exec.Command("gnome-system-monitor").Run()
+		exec.Command("gnome-taskmanager").Run()
 	}
 }
 
@@ -63,10 +87,10 @@ func home(path string) string {
 
 func main() {
 	material.Load(home("Github/material-design-icons"))
-	materialCommunity.Load(home("Github/MaterialDesign-Webfont"))
+	mdi.Load(home("Github/MaterialDesign-Webfont"))
 	typicons.Load(home("Github/typicons.font"))
-	ionicons.Load(home("Github/ionicons"))
-	fontawesome.Load(home("Projects/Perso/Font-Awesome"))
+	ionicons.LoadMd(home("Github/ionicons"))
+	fontawesome.Load(home("Github/Font-Awesome"))
 
 	colors.LoadFromMap(map[string]string{
 		"good":     "#6d6",
@@ -75,23 +99,75 @@ func main() {
 		"dim-icon": "#777",
 	})
 
-	localtime := clock.New().OutputFunc(func(now time.Time) bar.Output {
-		return outputs.Pango(
-			fontawesome.Icon("calendar-o", colors.Scheme("dim-icon")),
-			spacer,
-            now.Format("Jan 2"),
-			spacer,
-            fontawesome.Icon("clock-o", colors.Scheme("dim-icon")),
-		    spacer,
-            now.Format(" 15:04:05"),
-		)
-	}).OnClick(func(e bar.Event) {
+	localtime := clock.Local().
+		Output(time.Second, func(now time.Time) bar.Output {
+			return outputs.Pango(
+				pango.Icon("fa-calendar").Color(colors.Scheme("dim-icon")),
+				spacer,
+				now.Format("Jan 2 "),
+				pango.Icon("fa-clock").Color(colors.Scheme("dim-icon")),
+				spacer,
+				now.Format("15:04:05"),
+			)
+		})
+	localtime.OnClick(func(e bar.Event) {
 		if e.Button == bar.ButtonLeft {
 			exec.Command("gsimplecal").Run()
 		}
 	})
 
-	loadAvg := sysinfo.New().OutputFunc(func(s sysinfo.Info) bar.Output {
+	// Weather information comes from OpenWeatherMap.
+	// https://openweathermap.org/api.
+	wthr := weather.New(
+		openweathermap.Zipcode("31000", "FR").Build(),
+	).Output(func(w weather.Weather) bar.Output {
+		iconName := ""
+		switch w.Condition {
+		case weather.Thunderstorm,
+			weather.TropicalStorm,
+			weather.Hurricane:
+			iconName = "stormy"
+		case weather.Drizzle,
+			weather.Hail:
+			iconName = "shower"
+		case weather.Rain:
+			iconName = "downpour"
+		case weather.Snow,
+			weather.Sleet:
+			iconName = "snow"
+		case weather.Mist,
+			weather.Smoke,
+			weather.Whirls,
+			weather.Haze,
+			weather.Fog:
+			iconName = "windy-cloudy"
+		case weather.Clear:
+			if !w.Sunset.IsZero() && time.Now().After(w.Sunset) {
+				iconName = "night"
+			} else {
+				iconName = "sunny"
+			}
+		case weather.PartlyCloudy:
+			iconName = "partly-sunny"
+		case weather.Cloudy, weather.Overcast:
+			iconName = "cloudy"
+		case weather.Tornado,
+			weather.Windy:
+			iconName = "windy"
+		}
+		if iconName == "" {
+			iconName = "warning-outline"
+		} else {
+			iconName = "weather-" + iconName
+		}
+		return outputs.Pango(
+			pango.Icon("typecn-"+iconName), spacer,
+			pango.Textf("%.1f℃", w.Temperature.Celsius()),
+			pango.Textf(" (provided by %s)", w.Attribution).XSmall(),
+		)
+	})
+
+	loadAvg := sysinfo.New().Output(func(s sysinfo.Info) bar.Output {
 		out := outputs.Textf("%0.2f %0.2f", s.Loads[0], s.Loads[2])
 		// Load averages are unusually high for a few minutes after boot.
 		if s.Uptime < 10*time.Minute {
@@ -107,11 +183,12 @@ func main() {
 			out.Color(colors.Scheme("degraded"))
 		}
 		return out
-	}).OnClick(startTaskManager)
+	})
+	loadAvg.OnClick(startTaskManager)
 
-	freeMem := meminfo.New().OutputFunc(func(m meminfo.Info) bar.Output {
-		out := outputs.Pango(fontawesome.Icon("server"), spacer, m.Available().IEC())
-		freeGigs := m.Available().In("GiB")
+	freeMem := meminfo.New().Output(func(m meminfo.Info) bar.Output {
+		out := outputs.Pango(pango.Icon("fa-cog"), outputs.IBytesize(m.Available()))
+		freeGigs := m.Available().Gigabytes()
 		switch {
 		case freeGigs < 0.5:
 			out.Urgent(true)
@@ -123,33 +200,41 @@ func main() {
 			out.Color(colors.Scheme("good"))
 		}
 		return out
-	}).OnClick(startTaskManager)
+	})
+	freeMem.OnClick(startTaskManager)
 
-    batteryIndicator := battery.Default().OutputFunc(func(b battery.Info) bar.Output {
-      multi := outputs.Multi().AddPango("remaining",
-          fontawesome.Icon("battery", colors.Scheme("dim-icon")),
-          b.RemainingPct(),
-          "%")
-      if b.PluggedIn() {
-          multi = multi.AddPango("pluggedin",
-              spacer,
-              fontawesome.Icon("bolt", colors.Scheme("dim-icon")))
-      }
-      out := multi.Build()
-      remaining := b.RemainingPct()
-      if remaining < 10 {
-        out.Urgent(true)
-      }
-      return out
-    })
+	batt := battery.Named("BAT0").Output(func(b battery.Info) bar.Output {
+		var pstate *pango.Node
+		if b.PluggedIn() {
+			pstate = pango.Icon("fa-bolt")
+		} else {
+			pstate = pango.Text("")
+		}
+		out := outputs.Pango(pstate, pango.Textf("%d%%", b.RemainingPct()))
+		switch {
+		case b.RemainingTime() < time.Duration(5)*time.Minute:
+			out.Urgent(true)
+		case b.RemainingTime() < time.Duration(10)*time.Minute:
+			out.Color(colors.Scheme("bad"))
+		case b.RemainingTime() < time.Duration(30)*time.Minute:
+			out.Color(colors.Scheme("degraded"))
+		case b.RemainingTime() > time.Duration(45)*time.Minute:
+			out.Color(colors.Scheme("good"))
+		}
+		return out
+	})
+
+	gmplay := media.New("google-play-music-desktop-player").Output(mediaFormatFunc)
 
 	g := group.Collapsing()
 
-	panic(bar.Run(
+	panic(barista.Run(
+		gmplay,
 		g.Add(freeMem),
 		g.Add(loadAvg),
 		g.Button(outputs.Text("+"), outputs.Text("-")),
-        batteryIndicator,
+		wthr,
+		batt,
 		localtime,
 	))
 }
