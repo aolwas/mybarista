@@ -198,6 +198,8 @@ func main() {
 		}
 		out := outputs.Pango(pstate, pango.Textf("%d%%", b.RemainingPct()))
 		switch {
+		case b.PluggedIn():
+			out = out
 		case b.RemainingTime() < time.Duration(5)*time.Minute:
 			out.Urgent(true)
 		case b.RemainingTime() < time.Duration(10)*time.Minute:
