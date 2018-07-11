@@ -21,7 +21,7 @@
 #  version = "2.4.0"
 
 
-required = ["github.com/godbus/dbus","github.com/lucasb-eyer/go-colorful","github.com/phogolabs/parcello","github.com/soumya92/barista"]
+required = ["github.com/godbus/dbus","github.com/lucasb-eyer/go-colorful","github.com/soumya92/barista"]
 
 [[constraint]]
   branch = "master"
@@ -34,7 +34,3 @@ required = ["github.com/godbus/dbus","github.com/lucasb-eyer/go-colorful","githu
 [[constraint]]
   name = "github.com/lucasb-eyer/go-colorful"
   version = "v1.0"
-
-[[constraint]]
-  name = "github.com/phogolabs/parcello"
-  version = "v0.8"

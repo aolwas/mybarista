@@ -5,41 +5,94 @@
   branch = "master"
   name = "github.com/dustin/go-humanize"
   packages = ["."]
-  revision = "79e699ccd02f240a1f1fbbdcee7e64c1c12e41aa"
+  revision = "02af3965c54e8cacf948b97fef38925c4120652c"
 
 [[projects]]
   branch = "master"
+  name = "github.com/godbus/dbus"
+  packages = ["."]
+  revision = "aa2b68efcdd0a473f3a213251231e3d2bf206bbd"
+
+[[projects]]
   name = "github.com/lucasb-eyer/go-colorful"
   packages = ["."]
-  revision = "951b86a69bbd6463d0e19eff378e6905a746e26a"
+  revision = "345fbb3dbcdb252d9985ee899a84963c0fa24c82"
+  version = "v1.0"
+
+[[projects]]
+  name = "github.com/martinlindhe/unit"
+  packages = ["."]
+  revision = "158876cf1be6a0802ae125afaf03fc759efcc445"
+  version = "0.2.2"
 
 [[projects]]
   branch = "master"
   name = "github.com/soumya92/barista"
-  packages = ["bar","base","base/multi","base/scheduler","colors","modules/battery","modules/clock","modules/group","modules/meminfo","modules/sysinfo","outputs","pango","pango/icons","pango/icons/fontawesome","pango/icons/ionicons","pango/icons/material","pango/icons/material_community","pango/icons/typicons"]
-  revision = "ddf3971589f893b9ceb1bf7f0c792fe65766e8aa"
+  packages = [
+    ".",
+    "bar",
+    "base",
+    "colors",
+    "logging",
+    "modules/battery",
+    "modules/clock",
+    "modules/group",
+    "modules/media",
+    "modules/meminfo",
+    "modules/sysinfo",
+    "modules/weather",
+    "modules/weather/openweathermap",
+    "notifier",
+    "outputs",
+    "pango",
+    "pango/icons",
+    "timing"
+  ]
+  revision = "01f07669d41d594b8de16c260f81677c2fee656b"
 
 [[projects]]
-  branch = "master"
   name = "github.com/spf13/afero"
-  packages = [".","mem"]
-  revision = "36f8810e2e3d7eeac4ac05b57f65690fbfba62a2"
+  packages = [
+    ".",
+    "mem"
+  ]
+  revision = "787d034dfe70e44075ccc060d346146ef53270ad"
+  version = "v1.1.1"
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/text"
-  packages = ["internal/gen","internal/triegen","internal/ucd","transform","unicode/cldr","unicode/norm"]
-  revision = "18c65dde6afd36dbc39197ca72008895b8dfbfb6"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  revision = "039a4258aec0ad3c79b905677cceeab13b296a77"
 
 [[projects]]
-  branch = "v2"
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
+
+[[projects]]
+  name = "golang.org/x/text"
+  packages = [
+    "internal/gen",
+    "internal/triegen",
+    "internal/ucd",
+    "transform",
+    "unicode/cldr",
+    "unicode/norm"
+  ]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/time"
+  packages = ["rate"]
+  revision = "fbb02b2291d28baffd63558aa44b4b56f178d650"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f912e78966de427e57207505d46b1629f71a7510f901a89fd5a770db719fa952"
+  inputs-digest = "2ff6136a92caae280e362a6a4a174866adb3c1b2649914fdbfd7fa1813958d46"
   solver-name = "gps-cdcl"
   solver-version = 1

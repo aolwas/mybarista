@@ -20,11 +20,6 @@ import (
 	"github.com/soumya92/barista/modules/weather/openweathermap"
 	"github.com/soumya92/barista/outputs"
 	"github.com/soumya92/barista/pango"
-	"github.com/soumya92/barista/pango/icons/fontawesome"
-	"github.com/soumya92/barista/pango/icons/ionicons"
-	"github.com/soumya92/barista/pango/icons/material"
-	"github.com/soumya92/barista/pango/icons/mdi"
-	"github.com/soumya92/barista/pango/icons/typicons"
 )
 
 var spacer = pango.Text(" ").XXSmall()
@@ -60,7 +55,7 @@ func mediaFormatFunc(m media.Info) bar.Output {
 	if len(title) < 20 {
 		artist = truncate(m.Artist, 40-len(title))
 	}
-	iconAndPosition := pango.Icon("fa-music").Color(colors.Hex("#f70"))
+	iconAndPosition := pango.Text(" ")
 	if m.PlaybackStatus == media.Playing {
 		iconAndPosition.Append(
 			spacer, pango.Textf("%s/%s",
@@ -86,11 +81,6 @@ func home(path string) string {
 }
 
 func main() {
-	material.Load(home("Github/material-design-icons"))
-	mdi.Load(home("Github/MaterialDesign-Webfont"))
-	typicons.Load(home("Github/typicons.font"))
-	ionicons.LoadMd(home("Github/ionicons"))
-	fontawesome.Load(home("Github/Font-Awesome"))
 
 	colors.LoadFromMap(map[string]string{
 		"good":     "#6d6",
@@ -102,11 +92,9 @@ func main() {
 	localtime := clock.Local().
 		Output(time.Second, func(now time.Time) bar.Output {
 			return outputs.Pango(
-				pango.Icon("fa-calendar").Color(colors.Scheme("dim-icon")),
-				spacer,
+				pango.Text(" "),
 				now.Format("Jan 2 "),
-				pango.Icon("fa-clock").Color(colors.Scheme("dim-icon")),
-				spacer,
+				pango.Text(" "),
 				now.Format("15:04:05"),
 			)
 		})
@@ -121,54 +109,52 @@ func main() {
 	wthr := weather.New(
 		openweathermap.Zipcode("31000", "FR").Build(),
 	).Output(func(w weather.Weather) bar.Output {
-		iconName := ""
+		icon := ""
 		switch w.Condition {
 		case weather.Thunderstorm,
 			weather.TropicalStorm,
 			weather.Hurricane:
-			iconName = "stormy"
+			icon = ""
 		case weather.Drizzle,
 			weather.Hail:
-			iconName = "shower"
+			icon = ""
 		case weather.Rain:
-			iconName = "downpour"
+			icon = ""
 		case weather.Snow,
 			weather.Sleet:
-			iconName = "snow"
+			icon = ""
 		case weather.Mist,
 			weather.Smoke,
 			weather.Whirls,
 			weather.Haze,
 			weather.Fog:
-			iconName = "windy-cloudy"
+			icon = ""
 		case weather.Clear:
 			if !w.Sunset.IsZero() && time.Now().After(w.Sunset) {
-				iconName = "night"
+				icon = ""
 			} else {
-				iconName = "sunny"
+				icon = ""
 			}
 		case weather.PartlyCloudy:
-			iconName = "partly-sunny"
+			icon = ""
 		case weather.Cloudy, weather.Overcast:
-			iconName = "cloudy"
+			icon = ""
 		case weather.Tornado,
 			weather.Windy:
-			iconName = "windy"
+			icon = ""
 		}
-		if iconName == "" {
-			iconName = "warning-outline"
-		} else {
-			iconName = "weather-" + iconName
+		if icon == "" {
+			icon = ""
 		}
 		return outputs.Pango(
-			pango.Icon("typecn-"+iconName), spacer,
-			pango.Textf("%.1f℃", w.Temperature.Celsius()),
+			pango.Text(icon),
+			pango.Textf(" %.1f℃", w.Temperature.Celsius()),
 			pango.Textf(" (provided by %s)", w.Attribution).XSmall(),
 		)
 	})
 
 	loadAvg := sysinfo.New().Output(func(s sysinfo.Info) bar.Output {
-		out := outputs.Textf("%0.2f %0.2f", s.Loads[0], s.Loads[2])
+		out := outputs.Textf(" %0.2f %0.2f", s.Loads[0], s.Loads[2])
 		// Load averages are unusually high for a few minutes after boot.
 		if s.Uptime < 10*time.Minute {
 			// so don't add colours until 10 minutes after system start.
@@ -187,7 +173,7 @@ func main() {
 	loadAvg.OnClick(startTaskManager)
 
 	freeMem := meminfo.New().Output(func(m meminfo.Info) bar.Output {
-		out := outputs.Pango(pango.Icon("fa-cog"), outputs.IBytesize(m.Available()))
+		out := outputs.Pango(pango.Text(" "), outputs.IBytesize(m.Available()))
 		freeGigs := m.Available().Gigabytes()
 		switch {
 		case freeGigs < 0.5:
@@ -206,7 +192,7 @@ func main() {
 	batt := battery.Named("BAT0").Output(func(b battery.Info) bar.Output {
 		var pstate *pango.Node
 		if b.PluggedIn() {
-			pstate = pango.Icon("fa-bolt")
+			pstate = pango.Text(" ")
 		} else {
 			pstate = pango.Text("")
 		}
